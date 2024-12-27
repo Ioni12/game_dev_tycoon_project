@@ -102,4 +102,8 @@ public abstract class Company {
 
     protected abstract void hireEmployees(List<Employee> availableEmployees);
 
+    protected double getFunds() { return this.funds; }
+
+    protected String getName() { return this.name; }
+
 }

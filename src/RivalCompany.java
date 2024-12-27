@@ -1,12 +1,15 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.*;
 
 public class RivalCompany extends Company{
     private final AIStrategy aiStrategy;
+    private Random random;
 
     public RivalCompany(String name, Market market, AIStrategy aiStrategy) {
         super(name, market);
+        random = new Random();
         this.funds = random.nextDouble(200000);
         this.aiStrategy = aiStrategy;
     }
