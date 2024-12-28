@@ -2,12 +2,14 @@ import java.util.*;
 
 public class Market {
     private List<Company> companies;
+    private PlayerCompany player;
     private Set<String> usedNames = new HashSet<>();
     private Random random;
     private JobBoard board;
     private List<Employee> availableEmployees;
     private Scanner scan;
-    private AIStrategy aiStrategy;
+    private double TOTAL_MARKET_SHARE = 100;
+    private int companyCount = 10;
 
     private static final String[] GAME_COMPANIES = {
             "Nintendo", "Sony Interactive Entertainment", "Microsoft", "Ubisoft",
@@ -52,10 +54,11 @@ public class Market {
 
     private void createMarket() {
         companies = new ArrayList<>();
-        while(companies.size() < 10) {
+        while(companies.size() < companyCount) {
             String name = GAME_COMPANIES[random.nextInt(GAME_COMPANIES.length)];
+            double share = calculateMarketShare(companyCount);
             if(!usedNames.contains(name)) {
-                RivalCompany company = new RivalCompany(name, this, aiStrategy);
+                RivalCompany company = new RivalCompany(name, this, share);
                 companies.add(company);
             }
         }
@@ -67,17 +70,12 @@ public class Market {
         }
     }
 
-    public void displayEmployees(List<Employee> availableEmployees) {
-        System.out.println("select your employees: ");
-        System.out.printf("%-20s %-10s %-10s%n", "Name", "Salary", "Skill Level");
-        System.out.println("------------------------------------------------");
+    private double calculateMarketShare(double companyCount) {
+        return TOTAL_MARKET_SHARE / (companyCount - 10);
+    }
 
-        for (Employee employee : availableEmployees) {
-            System.out.printf("%-20s %-10.2f %-10d%n",
-                    employee.getName(),
-                    employee.getSalary(),
-                    employee.getSkillLevel());
-        }
+    public void setPlayer(PlayerCompany player) {
+        this.player = player;
     }
 
     public List<Employee> getAvailableEmployees() {
@@ -87,4 +85,6 @@ public class Market {
     public List<Company> getCompanies() {
         return companies;
     }
+
+
 }

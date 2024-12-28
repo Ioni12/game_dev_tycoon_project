@@ -4,14 +4,13 @@ import java.util.Scanner;
 import java.util.*;
 
 public class RivalCompany extends Company{
-    private final AIStrategy aiStrategy;
     private Random random;
 
-    public RivalCompany(String name, Market market, AIStrategy aiStrategy) {
-        super(name, market);
+
+    public RivalCompany(String name, Market market, double marketShare) {
+        super(name, market, marketShare);
         random = new Random();
         this.funds = random.nextDouble(200000);
-        this.aiStrategy = aiStrategy;
     }
 
     public void companyLife() {
@@ -20,15 +19,7 @@ public class RivalCompany extends Company{
     }
 
     protected void startNewGame() {
-        GameParameters params = aiStrategy.decideGameParameters(funds);
 
-        if(params.budget <= funds) {
-            games.add(new Game(params.title, params.genre, params.budget));
-            funds -= params.budget;
-            System.out.println("game development started");
-        } else {
-            System.out.println("insufficient funds");
-        }
     }
 
     public void developGames() {

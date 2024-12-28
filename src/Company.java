@@ -14,10 +14,12 @@ public abstract class Company {
     protected List<Employee> employees;
     protected List<Game> games;
     protected Market market;
+    protected double marketShare;
 
-    public Company(String name, Market market) {
+    public Company(String name, Market market, double marketShare) {
         this.market = market;
         this.name = name;
+        this.marketShare = marketShare;
         this.employees = new ArrayList<>();
         this.games = new ArrayList<>();
     }

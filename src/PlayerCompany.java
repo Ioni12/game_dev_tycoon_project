@@ -4,17 +4,15 @@ import java.util.Scanner;
 
 public class PlayerCompany extends Company{
     private Scanner scan = new Scanner(System.in);
-    private String name;
-    private double funds = 100000;
     private int reputation;
     private volatile boolean running = true;
     private Thread developmentThread;
-    private List<Employee> employees;
-    private List<Game> games;
     private Market market;
 
+
     public PlayerCompany(String name, Market market) {
-        super(name, market);
+        super(name, market, 10);
+        this.marketShare = 10;
         employees = new ArrayList<>();
         games = new ArrayList<>();
     }
@@ -96,5 +94,11 @@ public class PlayerCompany extends Company{
 
     }
 
+    public double getShares() {
+        return marketShare;
+    }
 
+    public void setShares(double shares) {
+        this.marketShare = shares;
+    }
 }

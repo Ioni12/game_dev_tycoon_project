@@ -9,6 +9,7 @@ public class Start {
     public Start() {
         market = new Market();
         playerCompany = new PlayerCompany(welcomingMessage(),  market);
+        market.setPlayer(playerCompany);
         optionsMenu();
     }
 
