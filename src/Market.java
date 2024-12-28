@@ -83,4 +83,8 @@ public class Market {
     public List<Employee> getAvailableEmployees() {
         return availableEmployees;
     }
+
+    public List<Company> getCompanies() {
+        return companies;
+    }
 }

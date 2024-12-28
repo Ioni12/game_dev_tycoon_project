@@ -68,7 +68,7 @@ public abstract class Company {
 
     protected abstract void developGames();
 
-    public void displayCompanyStatus() {
+    protected void displayCompanyStatus() {
         System.out.println("\nCompany Status:");
         System.out.println("Name: " + name);
         System.out.println("Funds: $" + String.format("%.2f", funds));
@@ -87,7 +87,7 @@ public abstract class Company {
         }
     }
 
-    public void displayEmployees(List<Employee> availableEmployees) {
+    protected void displayEmployees(List<Employee> availableEmployees) {
         System.out.println("select your employees: ");
         System.out.printf("%-20s %-10s %-10s%n", "Name", "Salary", "Skill Level");
         System.out.println("------------------------------------------------");

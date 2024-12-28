@@ -78,48 +78,6 @@ public class JobBoard {
         return new ArrayList<>(availableEmployees);
     }
 
-    public void hireEmployee(Employee employee) {
-        availableEmployees.remove(employee);
-    }
-
-    public void refreshJobBoard(int count) {
-        generateEmployees(count);
-    }
-
-    public List<Employee> getRandomEmployees(int count) {
-        List<Employee> randomEmployees = new ArrayList<>();
-        List<Employee> tempList = new ArrayList<>(availableEmployees);
-
-        count = Math.min(count, tempList.size());
-
-        for (int i = 0; i < count; i++) {
-            int index = random.nextInt(tempList.size());
-            randomEmployees.add(tempList.get(index));
-            tempList.remove(index);
-        }
-        return randomEmployees;
-    }
-
-    public List<Employee> getEmployeesByMinimumSkill(int minSkillLevel) {
-        List<Employee> filteredEmployees = new ArrayList<>();
-        for(Employee employee: availableEmployees) {
-            if(employee.getSkillLevel() >= minSkillLevel) {
-                filteredEmployees.add(employee);
-            }
-        }
-        return filteredEmployees;
-    }
-
-    public List<Employee> getEmployeeBySalaryRange(double minSalary, double maxSalary) {
-        List<Employee> filteredEmployees = new ArrayList<>();
-        for(Employee employee: availableEmployees) {
-            double salary = employee.getSalary();
-            if(salary >= minSalary && salary <= maxSalary) {
-                filteredEmployees.add(employee);
-            }
-        }
-        return filteredEmployees;
-    }
 }
 
 
