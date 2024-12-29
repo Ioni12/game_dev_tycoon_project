@@ -8,6 +8,9 @@ public class Market {
     private JobBoard board;
     private List<Employee> availableEmployees;
     private Scanner scan;
+    private volatile boolean isRunning;
+    private Thread marketThread;
+    private final long marketCycle = 30000;
     private double TOTAL_MARKET_SHARE = 100;
     private int companyCount = 10;
 
@@ -48,8 +51,63 @@ public class Market {
         availableEmployees = board.getAvailableEmployees();
         random = new Random();
         scan = new Scanner(System.in);
+        initializeMarket();
         createMarket();
         displayMarket();
+    }
+
+    private void initializeMarket() {
+        marketThread = new Thread(() -> {
+           while(isRunning) {
+                try {
+                    updateMarketCycle();
+                    Thread.sleep(marketCycle);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+           }
+        });
+        marketThread.setName("Market-cycle");
+        marketThread.setDaemon(true);
+        marketThread.start();
+    }
+
+    private void updateMarketCycle() {
+        updateMarketShares();
+        updateCompanyFinances();
+        displayMarket();
+    }
+
+    private void updateMarketShares() {
+        double totalShare = 100;
+        double playerShare = player != null ? player.getShares() : 0;
+        double remainingShares = totalShare - playerShare;
+
+        for(Company company: companies) {
+            if(company instanceof RivalCompany) {
+                double shareChange = (random.nextDouble() - 0.5) * 2;
+                company.adjustMarketShare(shareChange);
+            }
+        }
+
+        normalizeMarketShares(remainingShares);
+    }
+
+    private void normalizeMarketShares(double targetTotal) {
+        double currentTotal = companies.stream().mapToDouble(Company::getShares).sum();
+
+        double factor = targetTotal / currentTotal;
+        companies.forEach(company -> company.setShares(company.getShares() * factor));
+    }
+
+    private void updateCompanyFinances() {
+        companies.forEach(company -> {
+            if(company instanceof RivalCompany) {
+                double revenue = company.getShares() * 1000;
+                company.adjustFunds(revenue);
+            }
+        });
     }
 
     private void createMarket() {
@@ -71,7 +129,8 @@ public class Market {
     }
 
     private double calculateMarketShare(double companyCount) {
-        return TOTAL_MARKET_SHARE / (companyCount - 10);
+        double playerShare = player != null ? player.getShares() : 0;
+        return TOTAL_MARKET_SHARE / (companyCount - playerShare);
     }
 
     public void setPlayer(PlayerCompany player) {
@@ -84,6 +143,19 @@ public class Market {
 
     public List<Company> getCompanies() {
         return companies;
+    }
+
+    public void shutdown() {
+        isRunning = false;
+        if (marketThread != null) {
+            marketThread.interrupt();
+        }
+        // Shutdown all rival companies
+        companies.forEach(company -> {
+            if (company instanceof RivalCompany) {
+                ((RivalCompany) company).shutdown();
+            }
+        });
     }
 
 

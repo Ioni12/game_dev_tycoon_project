@@ -5,16 +5,44 @@ import java.util.*;
 
 public class RivalCompany extends Company{
     private Random random;
+    private volatile boolean isRunning;
+    private Thread developmentThread;
 
 
     public RivalCompany(String name, Market market, double marketShare) {
         super(name, market, marketShare);
         random = new Random();
         this.funds = random.nextDouble(200000);
+        isRunning = true;
+        initializeDevelopmentThread();
+    }
+
+    private void initializeDevelopmentThread() {
+        developmentThread = new Thread(() -> {
+            while(isRunning) {
+                try {
+                    developGames();
+                    Thread.sleep(random.nextInt(10000)+ 5000);
+                } catch(InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+
+        developmentThread.setName("development " + getName());
+        developmentThread.setDaemon(true);
+        developmentThread.start();
+    }
+
+    public void shutdown() {
+        isRunning = false;
+        if (developmentThread != null) {
+            developmentThread.interrupt();
+        }
     }
 
     public void companyLife() {
-
 
     }
 

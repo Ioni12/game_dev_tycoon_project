@@ -16,6 +16,9 @@ public abstract class Company {
     protected Market market;
     protected double marketShare;
 
+    private static final double MIN_MARKET_SHARE = 0.0;
+    private static final double MAX_MARKET_SHARE = 100.0;
+
     public Company(String name, Market market, double marketShare) {
         this.market = market;
         this.name = name;
@@ -75,6 +78,7 @@ public abstract class Company {
         System.out.println("Name: " + name);
         System.out.println("Funds: $" + String.format("%.2f", funds));
         System.out.println("Number of employees: " + employees.size());
+        System.out.println("the games: " + games.stream().map(Game::getTitle));
 
         if (!employees.isEmpty()) {
             System.out.println("\nCurrent Employees:");
@@ -107,5 +111,33 @@ public abstract class Company {
     protected double getFunds() { return this.funds; }
 
     protected String getName() { return this.name; }
+
+    public double getShares() {
+        return this.marketShare;
+    }
+
+    public void setShares(double newShare) {
+        this.marketShare = clampMarketShare(newShare);
+    }
+
+    public void adjustMarketShare(double change) {
+        this.marketShare = clampMarketShare(this.marketShare + change);
+    }
+
+    private double clampMarketShare(double share) {
+        return Math.min(Math.max(share, MIN_MARKET_SHARE), MAX_MARKET_SHARE);
+    }
+
+    public void adjustFunds(double amount) {
+        this.funds += amount;
+        // Optional: Prevent negative funds if that's a requirement
+        if (this.funds < 0) {
+            this.funds = 0;
+        }
+    }
+
+    public void setFunds(double newAmount) {
+        this.funds = Math.max(newAmount, 0);
+    }
 
 }
