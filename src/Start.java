@@ -5,10 +5,12 @@ public class Start {
     private boolean running = true;
     private Market market;
     private PlayerCompany playerCompany;
+    private NameGenerator nameGenerator;
 
     public Start() {
-        market = new Market();
-        playerCompany = new PlayerCompany(welcomingMessage(),  market);
+        nameGenerator = new NameGenerator();
+        market = new Market(nameGenerator);
+        playerCompany = new PlayerCompany(welcomingMessage(),  market, nameGenerator);
         market.setPlayer(playerCompany);
         optionsMenu();
     }

@@ -1,3 +1,4 @@
+import javax.naming.Name;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -15,11 +16,13 @@ public abstract class Company {
     protected List<Game> games;
     protected Market market;
     protected double marketShare;
+    protected NameGenerator nameGenerator;
 
     private static final double MIN_MARKET_SHARE = 0.0;
     private static final double MAX_MARKET_SHARE = 100.0;
 
-    public Company(String name, Market market, double marketShare) {
+    public Company(String name, Market market, double marketShare, NameGenerator nameGenerator) {
+        this.nameGenerator = nameGenerator;
         this.market = market;
         this.name = name;
         this.marketShare = marketShare;
@@ -74,11 +77,12 @@ public abstract class Company {
     protected abstract void developGames();
 
     protected void displayCompanyStatus() {
+        System.out.println("who is activating this -----");
         System.out.println("\nCompany Status:");
         System.out.println("Name: " + name);
         System.out.println("Funds: $" + String.format("%.2f", funds));
-        System.out.println("Number of employees: " + employees.size());
-        System.out.println("the games: " + games.stream().map(Game::getTitle));
+        System.out.println("Number of employees: " + this.employees.size());
+        System.out.println("the games: " + games.size());
 
         if (!employees.isEmpty()) {
             System.out.println("\nCurrent Employees:");

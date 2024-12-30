@@ -3,7 +3,6 @@ import java.util.*;
 public class Market {
     private List<Company> companies;
     private PlayerCompany player;
-    private Set<String> usedNames = new HashSet<>();
     private Random random;
     private JobBoard board;
     private List<Employee> availableEmployees;
@@ -12,51 +11,25 @@ public class Market {
     private Thread marketThread;
     private final long marketCycle = 30000;
     private double TOTAL_MARKET_SHARE = 100;
-    private int companyCount = 10;
-
-    private static final String[] GAME_COMPANIES = {
-            "Nintendo", "Sony Interactive Entertainment", "Microsoft", "Ubisoft",
-            "Electronic Arts", "Activision Blizzard", "Square Enix", "Capcom",
-            "Bethesda Softworks", "Valve Corporation", "Rockstar Games", "Epic Games",
-            "Bandai Namco Entertainment", "SEGA", "CD Projekt Red", "2K Games",
-            "Telltale Games", "Konami", "Blizzard Entertainment", "FromSoftware",
-            "Gearbox Software", "Insomniac Games", "Naughty Dog", "Bungie",
-            "Monolith Soft", "Treyarch", "Infinity Ward", "id Software", "Crytek",
-            "Respawn Entertainment", "Obsidian Entertainment", "Rare",
-            "Double Fine Productions", "IO Interactive", "Remedy Entertainment",
-            "Supergiant Games", "PlatinumGames", "Arkane Studios", "Paradox Interactive",
-            "Koei Tecmo", "Grasshopper Manufacture", "ZeniMax Online Studios",
-            "Larian Studios", "Hi-Rez Studios", "Avalanche Studios",
-            "Dontnod Entertainment", "Media Molecule", "Sucker Punch Productions",
-            "Guerrilla Games", "Mojang Studios", "Cyan Worlds", "People Can Fly",
-            "THQ Nordic", "Panic Button", "Crystal Dynamics", "Eidos-Montréal",
-            "Hangar 13", "Bluepoint Games", "Asobo Studio", "Creative Assembly",
-            "Firaxis Games", "Rocksteady Studios", "Polyphony Digital",
-            "Camelot Software Planning", "Level-5", "Game Freak", "HAL Laboratory",
-            "Intelligent Systems", "Tango Gameworks", "Clover Studio", "Team Ninja",
-            "CyberConnect2", "DICE", "Vicarious Visions", "Neversoft", "Harmonix",
-            "Playdead", "Thatgamecompany", "Team17", "Re-Logic", "Psyonix",
-            "InXile Entertainment", "Warhorse Studios", "Raven Software", "Techland",
-            "Saber Interactive", "Behaviour Interactive", "Red Barrels",
-            "Frictional Games", "Starbreeze Studios", "Housemarque", "Ninja Theory",
-            "Bend Studio", "Yacht Club Games", "DrinkBox Studios", "Facepunch Studios",
-            "Sumo Digital", "Tarsier Studios", "Croteam", "WayForward Technologies",
-            "Zindagi Games", "Iron Galaxy Studios", "Fatshark",
-            "Cliffhanger Productions", "Overkill Software", "Hidden Path Entertainment"
-    };
+    private int companyCount = 3;
+    private NameGenerator nameGenerator;
 
 
-    public Market() {
-        board  = new JobBoard();
+    public Market(NameGenerator nameGenerator) {
+        this.nameGenerator = nameGenerator;
+        isRunning = true;
+        board  = new JobBoard(nameGenerator);
         availableEmployees = board.getAvailableEmployees();
         random = new Random();
         scan = new Scanner(System.in);
+        System.out.println("the market is made");
         initializeMarket();
         createMarket();
         displayMarket();
     }
 
     private void initializeMarket() {
+        System.out.println("we are initializing the market");
         marketThread = new Thread(() -> {
            while(isRunning) {
                 try {
@@ -64,6 +37,7 @@ public class Market {
                     Thread.sleep(marketCycle);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    System.out.println("this is after running the market cycle");
                     break;
                 }
            }
@@ -74,12 +48,14 @@ public class Market {
     }
 
     private void updateMarketCycle() {
+        System.out.println("the market is running");
         updateMarketShares();
         updateCompanyFinances();
         displayMarket();
     }
 
     private void updateMarketShares() {
+        System.out.println("updating the market shares");
         double totalShare = 100;
         double playerShare = player != null ? player.getShares() : 0;
         double remainingShares = totalShare - playerShare;
@@ -95,6 +71,7 @@ public class Market {
     }
 
     private void normalizeMarketShares(double targetTotal) {
+        System.out.println("normalizing the market shares");
         double currentTotal = companies.stream().mapToDouble(Company::getShares).sum();
 
         double factor = targetTotal / currentTotal;
@@ -102,6 +79,7 @@ public class Market {
     }
 
     private void updateCompanyFinances() {
+        System.out.println("updating the company finances");
         companies.forEach(company -> {
             if(company instanceof RivalCompany) {
                 double revenue = company.getShares() * 1000;
@@ -111,21 +89,22 @@ public class Market {
     }
 
     private void createMarket() {
+        System.out.println("creating a market");
         companies = new ArrayList<>();
         while(companies.size() < companyCount) {
-            String name = GAME_COMPANIES[random.nextInt(GAME_COMPANIES.length)];
+            String name = nameGenerator.getRandomCompanyName();
             double share = calculateMarketShare(companyCount);
-            if(!usedNames.contains(name)) {
-                RivalCompany company = new RivalCompany(name, this, share);
+            if(!nameGenerator.isCompanyNameAvailable(name)) {
+                RivalCompany company = new RivalCompany(name, this, share, nameGenerator);
                 companies.add(company);
             }
         }
     }
 
     public void displayMarket() {
-        for(Company company: companies) {
-            company.displayCompanyStatus();
-        }
+//        for(Company company: companies) {
+//            company.displayCompanyStatus();
+//        }
     }
 
     private double calculateMarketShare(double companyCount) {
@@ -138,6 +117,8 @@ public class Market {
     }
 
     public List<Employee> getAvailableEmployees() {
+        System.out.println("Available employees in market: " +
+                (availableEmployees != null ? availableEmployees.size() : "null"));
         return availableEmployees;
     }
 

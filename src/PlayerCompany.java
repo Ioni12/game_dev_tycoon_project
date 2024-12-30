@@ -10,8 +10,8 @@ public class PlayerCompany extends Company{
     private Market market;
 
 
-    public PlayerCompany(String name, Market market) {
-        super(name, market, 10);
+    public PlayerCompany(String name, Market market, NameGenerator nameGenerator) {
+        super(name, market, 10, nameGenerator);
         this.marketShare = 10;
         employees = new ArrayList<>();
         games = new ArrayList<>();
@@ -49,7 +49,7 @@ public class PlayerCompany extends Company{
             return;
         }
 
-        GameDevelopmentManager.develop(games, employees, running, developmentThread);
+
     }
 
     public void displayCompanyStatus() {

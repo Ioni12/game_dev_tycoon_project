@@ -7,6 +7,7 @@ public class Game {
     private int developmentProgress;
     private int quality;
     private boolean completed;
+    private static final int PROGRESS_MULTIPLIER = 100;
 
     public enum Genre {
         ACTION(12, 1.2),
@@ -43,18 +44,32 @@ public class Game {
 
     public void develop(List<Employee> developers) {
         if (!completed) {
+            // Calculate progress from developers
             int progress = developers.stream()
                     .mapToInt(Employee::getSkillLevel)
                     .sum();
 
             developmentProgress += progress;
 
-            if( developmentProgress >= genre.getMonthsToComplete() * 100) {
+            // Calculate and display progress percentage
+            int totalRequired = genre.getMonthsToComplete() * PROGRESS_MULTIPLIER;
+            double progressPercentage = (developmentProgress * 100.0) / totalRequired;
+
+            // Format to 2 decimal places
+            System.out.printf("%s - Development Progress: %.2f%%\n", title, progressPercentage);
+
+            // Check if game is completed
+            if (developmentProgress >= totalRequired) {
                 completed = true;
                 calculateQuality(developers);
                 System.out.println("\n" + title + " Completed!");
             }
         }
+    }
+
+    public double getProgressPercentage() {
+        int totalRequired = genre.getMonthsToComplete() * PROGRESS_MULTIPLIER;
+        return (developmentProgress * 100.0) / totalRequired;
     }
 
     private void calculateQuality(List<Employee> developers) {
