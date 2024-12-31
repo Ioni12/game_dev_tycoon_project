@@ -85,7 +85,7 @@ public class Game {
         quality = (int)(avgSkill * genre.getQualityMultiplier() * (budget / 10000));
     }
 
-    private double calculateEarnings() {
+    public double calculateEarnings() {
         // Calculate earnings based on quality and genre popularity multiplier
         double baseEarnings = quality * 1000; // $1,000 per quality point
         return baseEarnings * genre.getQualityMultiplier();

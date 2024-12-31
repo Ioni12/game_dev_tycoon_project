@@ -10,8 +10,6 @@ public abstract class Company {
     protected String name;
     protected double funds;
     protected int reputation;
-    protected volatile boolean running = true;
-    protected Thread developmentThread;
     protected List<Employee> employees;
     protected List<Game> games;
     protected Market market;
@@ -20,6 +18,7 @@ public abstract class Company {
 
     private static final double MIN_MARKET_SHARE = 0.0;
     private static final double MAX_MARKET_SHARE = 100.0;
+    private static final double TAX_RATE = 0.25;
 
     public Company(String name, Market market, double marketShare, NameGenerator nameGenerator) {
         this.nameGenerator = nameGenerator;
@@ -128,10 +127,6 @@ public abstract class Company {
         this.marketShare = clampMarketShare(this.marketShare + change);
     }
 
-    private double clampMarketShare(double share) {
-        return Math.min(Math.max(share, MIN_MARKET_SHARE), MAX_MARKET_SHARE);
-    }
-
     public void adjustFunds(double amount) {
         this.funds += amount;
         // Optional: Prevent negative funds if that's a requirement
@@ -140,8 +135,66 @@ public abstract class Company {
         }
     }
 
+    public void updateQuarterlyFinances() {
+        double revenue = calculateRevenue();
+        double expenses = calculateExpenses();
+        double taxes = expenses * TAX_RATE;
+
+        // Update funds after tax
+        double profit = revenue - expenses - taxes;
+        adjustFunds(profit);
+
+        // Optionally, adjust market share based on financial performance
+        adjustMarketShare(profit > 0 ? 1 : -1);  // Increase market share if profitable
+
+        // Pay employees quarterly
+        payEmployees();
+
+        // Display quarterly report (optional)
+        displayQuarterlyReport(revenue, expenses, profit, taxes);
+    }
+
+    private double calculateRevenue() {
+        double baseRevenue = 0;
+        for (Game game : games) {
+            baseRevenue += game.calculateEarnings();
+        }
+        return baseRevenue * (1 + marketShare / 100);
+    }
+
+    private double calculateExpenses() {
+        double totalSalaries = 0;
+        for (Employee employee : employees) {
+            totalSalaries += employee.getSalary();
+        }
+        return totalSalaries;
+    }
+
+    private void payEmployees() {
+        double totalSalaries = calculateExpenses();
+        adjustFunds(-totalSalaries);
+    }
+
+    private void displayQuarterlyReport(double revenue, double expenses, double profit, double taxes) {
+        System.out.println("\nQuarterly Financial Report for " + name);
+        System.out.println("Revenue: $" + String.format("%.2f", revenue));
+        System.out.println("Expenses (Salaries): $" + String.format("%.2f", expenses));
+        System.out.println("Taxes: $" + String.format("%.2f", taxes));
+        System.out.println("Profit: $" + String.format("%.2f", profit));
+        System.out.println("Current Funds: $" + String.format("%.2f", funds));
+        System.out.println("Market Share: " + marketShare + "%");
+    }
+
+    private void adjustMarketShare(int change) {
+        this.marketShare = clampMarketShare(this.marketShare + change);
+    }
+
     public void setFunds(double newAmount) {
         this.funds = Math.max(newAmount, 0);
+    }
+
+    private double clampMarketShare(double share) {
+        return Math.min(Math.max(share, MIN_MARKET_SHARE), MAX_MARKET_SHARE);
     }
 
 }
