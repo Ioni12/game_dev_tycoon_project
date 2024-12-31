@@ -22,14 +22,12 @@ public class Market {
         availableEmployees = board.getAvailableEmployees();
         random = new Random();
         scan = new Scanner(System.in);
-        System.out.println("the market is made");
-        initializeMarket();
-        createMarket();
-        displayMarket();
+//        initializeMarket();
+//        createMarket();
+//        displayMarket();
     }
 
     private void initializeMarket() {
-        System.out.println("we are initializing the market");
         marketThread = new Thread(() -> {
            while(isRunning) {
                 try {
@@ -37,7 +35,7 @@ public class Market {
                     Thread.sleep(marketCycle);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    System.out.println("this is after running the market cycle");
+
                     break;
                 }
            }
@@ -102,14 +100,14 @@ public class Market {
     }
 
     public void displayMarket() {
-//        for(Company company: companies) {
-//            company.displayCompanyStatus();
-//        }
+        for(Company company: companies) {
+            company.displayCompanyStatus();
+        }
     }
 
     private double calculateMarketShare(double companyCount) {
-        double playerShare = player != null ? player.getShares() : 0;
-        return TOTAL_MARKET_SHARE / (companyCount - playerShare);
+                double playerShare = player != null ? player.getShares() : 0;
+                return TOTAL_MARKET_SHARE / (companyCount - playerShare);
     }
 
     public void setPlayer(PlayerCompany player) {

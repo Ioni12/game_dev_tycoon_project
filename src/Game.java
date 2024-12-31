@@ -42,7 +42,8 @@ public class Game {
         this.completed = false;
     }
 
-    public void develop(List<Employee> developers) {
+    public double develop(List<Employee> developers) {
+        double earnings = 0;
         if (!completed) {
             // Calculate progress from developers
             int progress = developers.stream()
@@ -63,8 +64,12 @@ public class Game {
                 completed = true;
                 calculateQuality(developers);
                 System.out.println("\n" + title + " Completed!");
+
+                 earnings = calculateEarnings();
+                System.out.printf("%s earned $%.2f from sales!\n", title, earnings);
             }
         }
+        return earnings;
     }
 
     public double getProgressPercentage() {
@@ -80,9 +85,16 @@ public class Game {
         quality = (int)(avgSkill * genre.getQualityMultiplier() * (budget / 10000));
     }
 
+    private double calculateEarnings() {
+        // Calculate earnings based on quality and genre popularity multiplier
+        double baseEarnings = quality * 1000; // $1,000 per quality point
+        return baseEarnings * genre.getQualityMultiplier();
+    }
+
     public boolean isCompleted() { return completed; }
     public int  getProgress()  { return developmentProgress; }
     public int getQuality() { return quality; }
     public Genre getGenre() { return genre; }
     public String getTitle() { return title; }
+    public double getBudget() { return budget; }
 }

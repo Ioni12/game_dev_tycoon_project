@@ -8,8 +8,6 @@ public class RivalCompany extends Company{
     private Random random;
     private volatile boolean isRunning;
     private Thread developmentThread;
-    private long lastGameStart;
-    private static final long GAME_START_COOLDOWN = 5000;
 
 
 
@@ -18,7 +16,6 @@ public class RivalCompany extends Company{
         random = new Random();
         this.funds = random.nextDouble(20000000);
         isRunning = true;
-        lastGameStart = System.currentTimeMillis();
         hireEmployees(market.getAvailableEmployees());
         initializeDevelopmentThread();
     }
