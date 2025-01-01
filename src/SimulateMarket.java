@@ -7,4 +7,3 @@ public class SimulateMarket {
 }
 
 
-/// to do the hiring proccess is a mess and needs a solution

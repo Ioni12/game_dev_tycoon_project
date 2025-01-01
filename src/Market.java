@@ -1,12 +1,12 @@
 import java.util.*;
 
 public class Market {
+    private List<Employee> availableEmployees;
     private List<Company> companies;
     private PlayerCompany player;
     private Random random;
-    private JobBoard board;
-    private List<Employee> availableEmployees;
     private Scanner scan;
+    private JobBoard board;
     private volatile boolean isRunning;
     private Thread marketThread;
     private final long marketCycle = 30000;
@@ -22,9 +22,7 @@ public class Market {
         availableEmployees = board.getAvailableEmployees();
         random = new Random();
         scan = new Scanner(System.in);
-//        initializeMarket();
-//        createMarket();
-//        displayMarket();
+        menu();
     }
 
     private void initializeMarket() {
@@ -123,6 +121,54 @@ public class Market {
     public List<Company> getCompanies() {
         return companies;
     }
+
+    private void runSimulation() {
+        marketThread = new Thread(() -> {
+            while(isRunning) {
+                try {
+                    if(companies.isEmpty()) {
+                        System.out.println("the companies list is empty");
+                        continue;
+                    }
+                    for(Company company: companies) {
+                        if(company instanceof RivalCompany) {
+                            ((RivalCompany) company).initializeDevelopmentThread();
+                        }
+                    }
+
+                    Thread.sleep(marketCycle);
+                    processQuarterlyUpdates();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        marketThread.setDaemon(true);
+        marketThread.start();
+    }
+
+    private void processQuarterlyUpdates() {
+        for (Company company : companies) {
+            company.updateQuarterlyFinances();  // Update finances, taxes, and market share for each company
+        }
+    }
+
+    private void menu() {
+        createMarket();
+        while(isRunning) {
+            int answer;
+            System.out.println("what do you want to do");
+            System.out.println("1 -- display market");
+            System.out.println("2 -- make games");
+            answer = scan.nextInt();
+            switch (answer) {
+                case 1: displayMarket(); break;
+                case 2: runSimulation(); break;
+            }
+        }
+    }
+
 
     public void shutdown() {
         isRunning = false;

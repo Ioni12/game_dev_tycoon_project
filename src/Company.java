@@ -75,8 +75,9 @@ public abstract class Company {
 
     protected abstract void developGames();
 
+    protected abstract void hireEmployees(List<Employee> availableEmployees);
+
     protected void displayCompanyStatus() {
-        System.out.println("who is activating this -----");
         System.out.println("\nCompany Status:");
         System.out.println("Name: " + name);
         System.out.println("Funds: $" + String.format("%.2f", funds));
@@ -109,27 +110,12 @@ public abstract class Company {
         }
     }
 
-    protected abstract void hireEmployees(List<Employee> availableEmployees);
-
-    protected double getFunds() { return this.funds; }
-
-    protected String getName() { return this.name; }
-
-    public double getShares() {
-        return this.marketShare;
-    }
-
-    public void setShares(double newShare) {
-        this.marketShare = clampMarketShare(newShare);
-    }
-
     public void adjustMarketShare(double change) {
         this.marketShare = clampMarketShare(this.marketShare + change);
     }
 
     public void adjustFunds(double amount) {
         this.funds += amount;
-        // Optional: Prevent negative funds if that's a requirement
         if (this.funds < 0) {
             this.funds = 0;
         }
@@ -195,6 +181,18 @@ public abstract class Company {
 
     private double clampMarketShare(double share) {
         return Math.min(Math.max(share, MIN_MARKET_SHARE), MAX_MARKET_SHARE);
+    }
+
+    protected double getFunds() { return this.funds; }
+
+    protected String getName() { return this.name; }
+
+    public double getShares() {
+        return this.marketShare;
+    }
+
+    public void setShares(double newShare) {
+        this.marketShare = clampMarketShare(newShare);
     }
 
 }
