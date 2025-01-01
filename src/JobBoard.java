@@ -11,7 +11,7 @@ public class JobBoard {
         this.nameGenerator = nameGenerator;
         availableEmployees = new ArrayList<>();
         random = new Random();
-        generateEmployees(50);
+        generateEmployees(150);
     }
 
     private void generateEmployees(int count) {

@@ -168,7 +168,7 @@ public abstract class Company {
         System.out.println("Taxes: $" + String.format("%.2f", taxes));
         System.out.println("Profit: $" + String.format("%.2f", profit));
         System.out.println("Current Funds: $" + String.format("%.2f", funds));
-        System.out.println("Market Share: " + marketShare + "%");
+        System.out.println("Market Share: " + this.marketShare + "%");
     }
 
     private void adjustMarketShare(int change) {

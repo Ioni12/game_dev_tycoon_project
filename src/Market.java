@@ -11,7 +11,7 @@ public class Market {
     private Thread marketThread;
     private final long marketCycle = 30000;
     private double TOTAL_MARKET_SHARE = 100;
-    private int companyCount = 3;
+    private int companyCount = 15;
     private NameGenerator nameGenerator;
 
 
@@ -51,34 +51,55 @@ public class Market {
     }
 
     private void updateMarketShares() {
-        System.out.println("updating the market shares");
-        double totalShare = 100;
-        double playerShare = player != null ? player.getShares() : 0;
-        double remainingShares = totalShare - playerShare;
+        Map<Company, Double> performanceScores = new HashMap<>();
+        double totalPerformance = 0;
 
-        for(Company company: companies) {
-            if(company instanceof RivalCompany) {
-                double shareChange = (random.nextDouble() - 0.5) * 2;
-                company.adjustMarketShare(shareChange);
-            }
+        // Calculate performance scores based on game quality, revenue, and employee skill
+        for (Company company : companies) {
+            double gameQualityScore = company.games.stream()
+                    .mapToDouble(Game::getQuality)
+                    .average()
+                    .orElse(0.0);
+
+            double revenueScore = company.getFunds() / 10000.0; // Normalize large numbers
+
+            double employeeScore = company.employees.stream()
+                    .mapToInt(Employee::getSkillLevel)
+                    .average()
+                    .orElse(0.0);
+
+            // Weight different factors
+            double performanceScore = (gameQualityScore * 0.4) +
+                    (revenueScore * 0.4) +
+                    (employeeScore * 0.2);
+
+            // Add some randomness (±20%)
+            performanceScore *= (0.8 + random.nextDouble() * 0.4);
+
+            performanceScores.put(company, performanceScore);
+            totalPerformance += performanceScore;
         }
 
-        normalizeMarketShares(remainingShares);
-    }
+        // Redistribute market shares based on performance
+        if (totalPerformance > 0) {
+            double remainingShare = TOTAL_MARKET_SHARE -
+                    (player != null ? player.getShares() : 0);
 
-    private void normalizeMarketShares(double targetTotal) {
-        System.out.println("normalizing the market shares");
-        double currentTotal = companies.stream().mapToDouble(Company::getShares).sum();
-
-        double factor = targetTotal / currentTotal;
-        companies.forEach(company -> company.setShares(company.getShares() * factor));
+            for (Company company : companies) {
+                if (company != player) {
+                    double newShare = (performanceScores.get(company) / totalPerformance) *
+                            remainingShare;
+                    company.setShares(newShare);
+                }
+            }
+        }
     }
 
     private void updateCompanyFinances() {
         System.out.println("updating the company finances");
         companies.forEach(company -> {
             if(company instanceof RivalCompany) {
-                double revenue = company.getShares() * 1000;
+                double revenue = company.getShares() * 100;
                 company.adjustFunds(revenue);
             }
         });

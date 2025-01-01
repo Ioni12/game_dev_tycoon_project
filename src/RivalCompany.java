@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 public class RivalCompany extends Company{
     private Random random;
     private Thread developmentThread;
+    private CompanyBehavior behavior;
 
     private volatile boolean isRunning;
 
@@ -19,8 +20,9 @@ public class RivalCompany extends Company{
     public RivalCompany(String name, Market market, double marketShare, NameGenerator nameGenerator) {
         super(name, market, marketShare, nameGenerator);
         random = new Random();
-        this.funds = random.nextDouble(20000000);
+        this.funds = random.nextDouble(100000);
         isRunning = true;
+        assignBehavior();
         entityLifeCycle();
     }
 
@@ -47,19 +49,33 @@ public class RivalCompany extends Company{
         developmentThread.start();
     }
 
+    private void assignBehavior() {
+        // Randomly assign a behavior type to this company
+        double rand = Math.random();
+        if (rand < 0.25) {
+            behavior = new AggressiveBehavior();
+        } else if (rand < 0.5) {
+            behavior = new ConservativeBehavior();
+        } else if (rand < 0.75) {
+            behavior = new BalancedBehavior();
+        } else {
+            behavior = new InnovativeBehavior();
+        }
+        System.out.println(getName() + " is using " + behavior.getBehaviorName() + " strategy");
+    }
 
     protected void startNewGame() {
-        if(employees.isEmpty()) {
+        if (employees.isEmpty() || !behavior.shouldStartNewGame(funds, games.size())) {
             return;
         }
 
-        double availableBudget = calculateGameBudget();
-        if(availableBudget < MIN_BUDGET_THRESHOLD) {
+        double availableBudget = behavior.calculateGameBudget(funds, marketShare);
+        if (availableBudget < MIN_BUDGET_THRESHOLD) {
             return;
         }
 
         String gameTitle = nameGenerator.generateGameTitle();
-        Game.Genre genre = selectGenre();
+        Game.Genre genre = behavior.selectGenre(funds, marketShare);
         Game game = new Game(gameTitle, genre, availableBudget);
 
         games.add(game);
@@ -67,8 +83,8 @@ public class RivalCompany extends Company{
         lastGameStartTime = System.currentTimeMillis();
 
         System.out.println(String.format(
-                "\n%s started development of '%s'\nGenre: %s\nBudget: $%.2f\nEstimated months: %d\nRemaining funds: $%.2f",
-                getName(), gameTitle, genre, availableBudget, genre.getMonthsToComplete(), funds
+                "\n%s (%s) started development of '%s'\nGenre: %s\nBudget: $%.2f\nEstimated months: %d\nRemaining funds: $%.2f",
+                getName(), behavior.getBehaviorName(), gameTitle, genre, availableBudget, genre.getMonthsToComplete(), funds
         ));
     }
 
@@ -110,42 +126,33 @@ public class RivalCompany extends Company{
     }
 
     public void hireEmployees(List<Employee> availableEmployees) {
-        while(employees.size() < 5) {
-            System.out.println(getName() + " attempting to hire employees...");
+        int targetCount = behavior.getTargetEmployeeCount();
+        while (employees.size() < targetCount) {
             if (availableEmployees == null || availableEmployees.isEmpty()) {
                 System.out.println("No available employees to hire.");
                 return;
             }
 
-            if (employees.size() >= 5) {
-                System.out.println(getName() + " already has maximum employees.");
-                return;
-            }
-
-            double maxAffordableSalary = Math.min(funds * 0.2, 10000);
-
-            // Find suitable candidates within budget
+            double maxAffordableSalary = Math.min(funds * behavior.getMaxSalaryPercentage(), 10000);
             List<Employee> affordableCandidates = availableEmployees.stream()
                     .filter(emp -> emp.getSalary() <= maxAffordableSalary)
                     .collect(Collectors.toList());
 
             if (!affordableCandidates.isEmpty()) {
-                // Randomly select one of the affordable candidates
                 int randomIndex = random.nextInt(affordableCandidates.size());
                 Employee selectedEmployee = affordableCandidates.get(randomIndex);
 
-                // Hire the employee
                 if (employees.add(selectedEmployee)) {
                     availableEmployees.remove(selectedEmployee);
                     adjustFunds(-selectedEmployee.getSalary());
-
-                    System.out.println(getName() + " hired " + selectedEmployee.getName() +
-                            " (Skill: " + selectedEmployee.getSkillLevel() +
-                            ", Salary: $" + String.format("%.2f", selectedEmployee.getSalary()) + ")");
+                    System.out.println(String.format(
+                            "%s (%s) hired %s (Skill: %d, Salary: $%.2f)",
+                            getName(), behavior.getBehaviorName(), selectedEmployee.getName(),
+                            selectedEmployee.getSkillLevel(), selectedEmployee.getSalary()
+                    ));
                 }
             } else {
-                System.out.println(getName() + " couldn't find affordable candidates. Max affordable salary: $" +
-                        String.format("%.2f", maxAffordableSalary));
+                break;
             }
         }
     }
@@ -180,7 +187,7 @@ public class RivalCompany extends Company{
         double baseRevenue = game.getBudget() * (1 + (game.getQuality() / 1000.0));
         double marketFactor = 1 + (marketShare / 1000.0);
         double revenue = baseRevenue * marketFactor * (0.8 + random.nextDouble() * 0.4);
-        return Math.min(revenue, game.getBudget() * 1.5);
+        return Math.min(revenue, game.getBudget() * (1.0 + (game.getQuality() / 200.0)));
     }
 
     private void recoverBudget() {
