@@ -8,6 +8,8 @@ public class Game {
     private int quality;
     private boolean completed;
     private static final int PROGRESS_MULTIPLIER = 100;
+    private Company company; // Add this field
+    private Market market;
 
     public enum Genre {
         ACTION(12, 1.2),
@@ -33,14 +35,18 @@ public class Game {
         }
     }
 
-    public Game(String title, Genre genre, double budget) {
+    public Game(String title, Genre genre, double budget, Company company, Market market) {
         this.title = title;
         this.genre = genre;
         this.budget = budget;
+        this.company = company;
+        this.market = market;
         this.developmentProgress = 0;
         this.quality = 0;
         this.completed = false;
     }
+
+
 
     public void develop(List<Employee> developers) {
         if (!completed) {
@@ -84,9 +90,7 @@ public class Game {
     }
 
     public double calculateEarnings() {
-        // Calculate earnings based on quality and genre popularity multiplier
-        double baseEarnings = quality * 5; // $1,000 per quality point
-        return Math.min(baseEarnings * genre.getQualityMultiplier(), budget * 1.5);
+        return GameEconomy.calculateGameRevenue(this, company.getShares(), market.getTotalMarketSize());
     }
 
     public boolean isCompleted() { return completed; }

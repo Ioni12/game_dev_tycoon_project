@@ -6,9 +6,11 @@ public class JobBoard {
     final private List<Employee> availableEmployees;
     private Random random;
     private NameGenerator nameGenerator;
+    private Market market;
 
-    public JobBoard(NameGenerator nameGenerator) {
+    public JobBoard(NameGenerator nameGenerator, Market market) {
         this.nameGenerator = nameGenerator;
+        this.market = market;
         availableEmployees = new ArrayList<>();
         random = new Random();
         generateEmployees(150);
@@ -48,9 +50,20 @@ public class JobBoard {
     }
 
     private double calculateSalary(int skillLevel, int productivity) {
-        double baseSalary = 3000 + (skillLevel * 500) + (productivity * 20);  // Adjusted formula
-        double variation = (random.nextDouble() * 0.2) - 0.1;  // ±10% variation
-        return Math.round(baseSalary * (1 + variation));
+        if (market.getCompanies() == null || market.getCompanies().isEmpty()) {
+            return 3000 + (skillLevel * 750) * (1.0 + (productivity - 50) / 100.0);
+        }
+
+        double avgMarketRevenue = market.getCompanies().stream()
+                .mapToDouble(Company::getQuarterlyRevenue)
+                .average()
+                .orElse(10000.0);
+
+        return GameEconomy.calculateEmployeeSalary(
+                skillLevel,
+                productivity,
+                avgMarketRevenue
+        );
     }
 
     public List<Employee> getAvailableEmployees() {

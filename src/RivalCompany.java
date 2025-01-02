@@ -30,6 +30,11 @@ public class RivalCompany extends Company{
         developmentThread = new Thread(() -> {
             while(isRunning) {
                 try {
+                    if (funds <= 0) {
+                        System.out.println(getName() + " is out of funds!");
+                        break;  // Exit the thread loop
+                    }
+
                     if(employees.isEmpty()) {
                         System.out.println(getName() + " has no employees, attempting to hire...");
                         hireEmployees(market.getAvailableEmployees());
@@ -65,27 +70,15 @@ public class RivalCompany extends Company{
     }
 
     protected void startNewGame() {
-        if (employees.isEmpty() || !behavior.shouldStartNewGame(funds, games.size())) {
-            return;
-        }
+        if (!behavior.shouldStartNewGame(funds, games.size())) return;
 
-        double availableBudget = behavior.calculateGameBudget(funds, marketShare);
-        if (availableBudget < MIN_BUDGET_THRESHOLD) {
-            return;
-        }
-
-        String gameTitle = nameGenerator.generateGameTitle();
+        double budget = behavior.calculateGameBudget(funds, marketShare);
+        String title = nameGenerator.generateGameTitle();
         Game.Genre genre = behavior.selectGenre(funds, marketShare);
-        Game game = new Game(gameTitle, genre, availableBudget);
 
+        Game game = new Game(title, genre, budget, this, market);
         games.add(game);
-        adjustFunds(-availableBudget);
-        lastGameStartTime = System.currentTimeMillis();
-
-        System.out.println(String.format(
-                "\n%s (%s) started development of '%s'\nGenre: %s\nBudget: $%.2f\nEstimated months: %d\nRemaining funds: $%.2f",
-                getName(), behavior.getBehaviorName(), gameTitle, genre, availableBudget, genre.getMonthsToComplete(), funds
-        ));
+        adjustFunds(-budget);
     }
 
     private double calculateGameBudget() {
@@ -100,40 +93,34 @@ public class RivalCompany extends Company{
     }
 
     public void developGames() {
-        if(games.size() < 2 && canStartNewGame() && random.nextDouble() < 0.5) {
-            startNewGame();
-        }
-
-        // Process existing games
         Iterator<Game> iterator = games.iterator();
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             Game game = iterator.next();
-            if(game.isCompleted()) {
-                handleCompletedGame(game);
-                iterator.remove();
-            } else {
+            if (!game.isCompleted()) {
+                double costs = GameEconomy.calculateDevelopmentCosts(game, employees);
+                adjustFunds(-costs);
                 game.develop(employees);
+            } else {
                 double earnings = game.calculateEarnings();
-                if(earnings > 0) {
-                    adjustFunds(earnings);
-                    System.out.printf("%s earned $%.2f from %s!\n", getName(), earnings, game.getTitle());
-                }
+                adjustFunds(earnings);
+                iterator.remove();
             }
         }
 
-        // Simulate budget recovery over time
-        recoverBudget();
+        if (behavior.shouldStartNewGame(funds, games.size())) {
+            startNewGame();
+        }
     }
 
     public void hireEmployees(List<Employee> availableEmployees) {
         int targetCount = behavior.getTargetEmployeeCount();
 
-//        while (employees.size() > targetCount) {
-//            Employee excessEmployee = employees.remove(random.nextInt(employees.size()));
-//            adjustFunds(excessEmployee.getSalary());
-//            System.out.println(String.format("%s removed %s (Skill: %d, Salary: $%.2f) to meet the target count.",
-//                    getName(), excessEmployee.getName(), excessEmployee.getSkillLevel(), excessEmployee.getSalary()));
-//        }
+        while (employees.size() > targetCount) {
+            Employee excessEmployee = employees.remove(random.nextInt(employees.size()));
+            adjustFunds(excessEmployee.getSalary());
+            System.out.println(String.format("%s removed %s (Skill: %d, Salary: $%.2f) to meet the target count.",
+                    getName(), excessEmployee.getName(), excessEmployee.getSkillLevel(), excessEmployee.getSalary()));
+        }
 
 
         while (employees.size() < targetCount) {

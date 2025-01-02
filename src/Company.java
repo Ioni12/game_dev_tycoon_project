@@ -20,6 +20,8 @@ public abstract class Company {
     private static final double MAX_MARKET_SHARE = 100.0;
     private static final double TAX_RATE = 0.25;
 
+    private double quarterlyRevenue = 0;
+
     public Company(String name, Market market, double marketShare, NameGenerator nameGenerator) {
         this.nameGenerator = nameGenerator;
         this.market = market;
@@ -130,13 +132,15 @@ public abstract class Company {
         double profit = revenue - expenses - taxes;
         adjustFunds(profit);
 
-        // Optionally, adjust market share based on financial performance
-        adjustMarketShare(profit > 0 ? 1 : -1);  // Increase market share if profitable
+        // Pay employees if possible
+        if (funds >= calculateExpenses()) {
+            payEmployees();
+        } else {
+            // If can't pay employees, reduce funds to 0
+            setFunds(0);
+        }
 
-        // Pay employees quarterly
-        payEmployees();
-
-        // Display quarterly report (optional)
+        // Display quarterly report
         displayQuarterlyReport(revenue, expenses, profit, taxes);
     }
 
@@ -159,6 +163,14 @@ public abstract class Company {
     private void payEmployees() {
         double totalSalaries = calculateExpenses();
         adjustFunds(-totalSalaries);
+    }
+
+    public double getQuarterlyRevenue() {
+        return quarterlyRevenue;
+    }
+
+    protected void updateQuarterlyRevenue(double amount) {
+        this.quarterlyRevenue = amount;
     }
 
     private void displayQuarterlyReport(double revenue, double expenses, double profit, double taxes) {

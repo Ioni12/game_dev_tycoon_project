@@ -35,7 +35,7 @@ public class PlayerCompany extends Company{
         scan.nextLine();
 
         if(budget <= funds) {
-            games.add(new Game(title, genre, budget));
+            games.add(new Game(title, genre, budget, this, market));
             funds -= budget;
             System.out.println("game development started");
         } else {

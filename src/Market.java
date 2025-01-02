@@ -13,13 +13,14 @@ public class Market {
     private double TOTAL_MARKET_SHARE = 100;
     private int companyCount = 15;
     private NameGenerator nameGenerator;
+    private double totalMarketSize = GameEconomy.BASE_MARKET_SIZE;
 
 
     public Market(NameGenerator nameGenerator) {
         this.nameGenerator = nameGenerator;
         isRunning = true;
-        board  = new JobBoard(nameGenerator);
-        availableEmployees = board.getAvailableEmployees();
+        board  = new JobBoard(nameGenerator, this);
+        availableEmployees  = Collections.synchronizedList(new ArrayList<>(board.getAvailableEmployees()));
         random = new Random();
         scan = new Scanner(System.in);
         menu();
@@ -48,6 +49,54 @@ public class Market {
         updateMarketShares();
         updateCompanyFinances();
         displayMarket();
+    }
+
+    private void checkCompanyBankruptcy() {
+        Iterator<Company> iterator = companies.iterator();
+        while (iterator.hasNext()) {
+            Company company = iterator.next();
+            if (company.getFunds() <= 0 && !(company instanceof PlayerCompany)) {
+                handleCompanyBankruptcy((RivalCompany)company);
+                iterator.remove();
+            }
+        }
+    }
+
+    private void handleCompanyBankruptcy(RivalCompany company) {
+        System.out.println("\n" + company.getName() + " has gone bankrupt and is shutting down!");
+
+        // Return employees to available pool
+        if (company.employees != null) {
+            availableEmployees.addAll(company.employees);
+            System.out.println(company.employees.size() + " employees returned to job market");
+        }
+
+        // Redistribute market share
+        double failedCompanyShare = company.getShares();
+        redistributeMarketShare(failedCompanyShare);
+
+        // Shutdown company threads
+        company.shutdown();
+    }
+
+    private void redistributeMarketShare(double availableShare) {
+        // Calculate total current shares of remaining companies (excluding player)
+        double totalCurrentShares = companies.stream()
+                .filter(c -> !(c instanceof PlayerCompany))
+                .mapToDouble(Company::getShares)
+                .sum();
+
+        if (totalCurrentShares > 0) {
+            // Distribute proportionally based on current market share
+            for (Company company : companies) {
+                if (!(company instanceof PlayerCompany)) {
+                    double proportion = company.getShares() / totalCurrentShares;
+                    double newShare = company.getShares() + (availableShare * proportion);
+                    company.setShares(newShare);
+                }
+            }
+        }
+        System.out.println("Market share of " + String.format("%.2f", availableShare) + "% has been redistributed");
     }
 
     private void updateMarketShares() {
@@ -113,7 +162,7 @@ public class Market {
 
     private void createMarket() {
         System.out.println("creating a market");
-        companies = new ArrayList<>();
+        companies = Collections.synchronizedList(new ArrayList<>());
         while(companies.size() < companyCount) {
             String name = nameGenerator.getRandomCompanyName();
             double share = calculateMarketShare(companyCount);
@@ -164,6 +213,7 @@ public class Market {
                     }
 
                     Thread.sleep(marketCycle);
+                    checkCompanyBankruptcy();
                     updateMarketShares();
                     processQuarterlyUpdates();
                 } catch (InterruptedException e) {
@@ -177,9 +227,53 @@ public class Market {
     }
 
     private void processQuarterlyUpdates() {
+        // Grow market size
+        totalMarketSize *= (1 + GameEconomy.MARKET_GROWTH_RATE);
+
+        // Calculate industry average performance
+        double avgPerformance = companies.stream()
+                .mapToDouble(this::calculateCompanyPerformance)
+                .average()
+                .orElse(0.0);
+
+        // Update each company
         for (Company company : companies) {
-            company.updateQuarterlyFinances();  // Update finances, taxes, and market share for each company
+            double performance = calculateCompanyPerformance(company);
+            double shareChange = GameEconomy.calculateMarketShareChange(
+                    company.getShares(),
+                    performance,
+                    avgPerformance
+            );
+            company.adjustMarketShare(shareChange);
+            company.updateQuarterlyFinances();
         }
+    }
+
+    private double calculateCompanyPerformance(Company company) {
+        double revenue = company.getQuarterlyRevenue();
+        double gameQuality = company.games.stream()
+                .mapToDouble(Game::getQuality)
+                .average()
+                .orElse(0.0);
+
+        double employeeSkill = company.employees.stream()
+                .mapToDouble(Employee::getSkillLevel)
+                .average()
+                .orElse(0.0);
+
+        int activeGames = (int) company.games.stream()
+                .filter(g -> !g.isCompleted())
+                .count();
+
+        return (revenue * 0.4) +
+                (gameQuality * 100 * 0.3) +
+                (employeeSkill * 50 * 0.2) +
+                (activeGames * 1000 * 0.1);
+    }
+
+
+    public double getTotalMarketSize() {
+        return totalMarketSize;
     }
 
     private void menu() {
