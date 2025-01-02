@@ -127,6 +127,15 @@ public class RivalCompany extends Company{
 
     public void hireEmployees(List<Employee> availableEmployees) {
         int targetCount = behavior.getTargetEmployeeCount();
+
+//        while (employees.size() > targetCount) {
+//            Employee excessEmployee = employees.remove(random.nextInt(employees.size()));
+//            adjustFunds(excessEmployee.getSalary());
+//            System.out.println(String.format("%s removed %s (Skill: %d, Salary: $%.2f) to meet the target count.",
+//                    getName(), excessEmployee.getName(), excessEmployee.getSkillLevel(), excessEmployee.getSalary()));
+//        }
+
+
         while (employees.size() < targetCount) {
             if (availableEmployees == null || availableEmployees.isEmpty()) {
                 System.out.println("No available employees to hire.");

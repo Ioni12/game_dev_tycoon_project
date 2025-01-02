@@ -25,23 +25,23 @@ public class Market {
         menu();
     }
 
-    private void initializeMarket() {
-        marketThread = new Thread(() -> {
-           while(isRunning) {
-                try {
-                    updateMarketCycle();
-                    Thread.sleep(marketCycle);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-
-                    break;
-                }
-           }
-        });
-        marketThread.setName("Market-cycle");
-        marketThread.setDaemon(true);
-        marketThread.start();
-    }
+//    private void initializeMarket() {
+//        marketThread = new Thread(() -> {
+//           while(isRunning) {
+//                try {
+//                    updateMarketCycle();
+//                    Thread.sleep(marketCycle);
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//
+//                    break;
+//                }
+//           }
+//        });
+//        marketThread.setName("Market-cycle");
+//        marketThread.setDaemon(true);
+//        marketThread.start();
+//    }
 
     private void updateMarketCycle() {
         System.out.println("the market is running");
@@ -52,45 +52,51 @@ public class Market {
 
     private void updateMarketShares() {
         Map<Company, Double> performanceScores = new HashMap<>();
-        double totalPerformance = 0;
+        double totalPerformance = 0.001; // Prevent division by zero
 
-        // Calculate performance scores based on game quality, revenue, and employee skill
         for (Company company : companies) {
+            // Base score so companies always have some performance
+            double baseScore = 1.0;
+
             double gameQualityScore = company.games.stream()
                     .mapToDouble(Game::getQuality)
                     .average()
                     .orElse(0.0);
 
-            double revenueScore = company.getFunds() / 10000.0; // Normalize large numbers
+            double revenueScore = company.getFunds() / 10000.0;
 
             double employeeScore = company.employees.stream()
                     .mapToInt(Employee::getSkillLevel)
                     .average()
                     .orElse(0.0);
 
-            // Weight different factors
-            double performanceScore = (gameQualityScore * 0.4) +
+            // Add baseScore to ensure some minimal performance
+            double performanceScore = baseScore +
+                    (gameQualityScore * 0.4) +
                     (revenueScore * 0.4) +
                     (employeeScore * 0.2);
 
-            // Add some randomness (±20%)
-            performanceScore *= (0.8 + random.nextDouble() * 0.4);
+            // Add more randomness to create market dynamics
+            performanceScore *= (0.5 + random.nextDouble());
 
             performanceScores.put(company, performanceScore);
             totalPerformance += performanceScore;
         }
 
-        // Redistribute market shares based on performance
-        if (totalPerformance > 0) {
-            double remainingShare = TOTAL_MARKET_SHARE -
-                    (player != null ? player.getShares() : 0);
+        // Redistribute market shares
+        double remainingShare = TOTAL_MARKET_SHARE -
+                (player != null ? player.getShares() : 0);
 
-            for (Company company : companies) {
-                if (company != player) {
-                    double newShare = (performanceScores.get(company) / totalPerformance) *
-                            remainingShare;
-                    company.setShares(newShare);
-                }
+        for (Company company : companies) {
+            if (company != player) {
+                double newShare = (performanceScores.get(company) / totalPerformance) *
+                        remainingShare;
+                // Add maximum change limit to prevent drastic swings
+                double currentShare = company.getShares();
+                double maxChange = 2.0; // Maximum 2% change per cycle
+                newShare = Math.max(currentShare - maxChange,
+                        Math.min(currentShare + maxChange, newShare));
+                company.setShares(newShare);
             }
         }
     }
@@ -158,6 +164,7 @@ public class Market {
                     }
 
                     Thread.sleep(marketCycle);
+                    updateMarketShares();
                     processQuarterlyUpdates();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

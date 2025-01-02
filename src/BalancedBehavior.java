@@ -19,12 +19,12 @@ public class BalancedBehavior implements CompanyBehavior {
 
     @Override
     public int getTargetEmployeeCount() {
-        return 6;
+        return (int) (new Random().nextInt(6) + 1);
     }
 
     @Override
     public double getMaxSalaryPercentage() {
-        return 0.2;
+        return (double) (new Random().nextDouble(0.2) + 0.1);
     }
 
     @Override

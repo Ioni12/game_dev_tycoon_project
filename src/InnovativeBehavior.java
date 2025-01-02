@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class InnovativeBehavior implements CompanyBehavior {
     @Override
     public double calculateGameBudget(double funds, double marketShare) {
@@ -23,12 +25,12 @@ public class InnovativeBehavior implements CompanyBehavior {
 
     @Override
     public int getTargetEmployeeCount() {
-        return 7;
+        return (int) (new Random().nextInt(7) + 1);
     }
 
     @Override
     public double getMaxSalaryPercentage() {
-        return 0.25;
+        return (double) (new Random().nextDouble(0.25) + 0.05);
     }
 
     @Override
