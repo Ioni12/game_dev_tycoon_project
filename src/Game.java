@@ -76,11 +76,6 @@ public class Game {
         }
     }
 
-    public double getProgressPercentage() {
-        int totalRequired = genre.getMonthsToComplete() * PROGRESS_MULTIPLIER;
-        return (developmentProgress * 100.0) / totalRequired;
-    }
-
     private void calculateQuality(List<Employee> developers) {
         double avgSkill = developers.stream()
                 .mapToInt(Employee::getSkillLevel)

@@ -3,7 +3,7 @@ import java.util.Random;
 public class AggressiveBehavior implements CompanyBehavior {
     @Override
     public double calculateGameBudget(double funds, double marketShare) {
-        return funds * 0.6 * (1.0 + (marketShare / 100));
+        return funds * 0.2 * (1.0 + (marketShare / 100));
     }
 
     @Override
@@ -20,7 +20,7 @@ public class AggressiveBehavior implements CompanyBehavior {
 
     @Override
     public boolean shouldStartNewGame(double funds, int currentGames) {
-        return funds >= 1000 && currentGames < 3;
+        return funds >= 1000 && currentGames < 3 && new Random().nextDouble() < 0.5;
     }
 
     @Override

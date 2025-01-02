@@ -8,8 +8,8 @@ public class GameEconomy {
 
     // Game development constants
     public static final double MARKETING_MULTIPLIER = 0.3;
-    public static final double DEVELOPMENT_COST_MULTIPLIER = 1.2;
-    public static final double QUALITY_IMPACT = 0.4;
+    public static final double DEVELOPMENT_COST_MULTIPLIER = 1.1;
+    public static final double QUALITY_IMPACT = 0.5;
 
     public static double calculateGameRevenue(Game game, double marketShare, double totalMarketSize) {
         // Base revenue calculation
