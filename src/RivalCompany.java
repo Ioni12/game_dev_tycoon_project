@@ -11,16 +11,19 @@ public class RivalCompany extends Company{
 
     private volatile boolean isRunning;
 
-    private static final double MIN_BUDGET_THRESHOLD = 500; // Minimum budget to start a game
-    private static final double BUDGET_RECOVERY_RATE = 10000;
+    private static final double MIN_BUDGET_THRESHOLD = 2000; // Minimum budget to start a game
+    private static final double BUDGET_RECOVERY_RATE = 50000;
     private static final long GAME_START_COOLDOWN = 30000;
+    private static final double CRITICAL_FUNDS_THRESHOLD = 30000;
+    private static final double EMERGENCY_FUNDS_THRESHOLD = 15000;
+    private static final double MIN_OPERATING_FUNDS = 7500;
 
     private long lastGameStartTime = 0;
 
     public RivalCompany(String name, Market market, double marketShare, NameGenerator nameGenerator) {
         super(name, market, marketShare, nameGenerator);
         random = new Random();
-        this.funds = random.nextDouble(100000);
+        this.funds = 300000;
         isRunning = true;
         assignBehavior();
         entityLifeCycle();
@@ -69,6 +72,7 @@ public class RivalCompany extends Company{
         System.out.println(getName() + " is using " + behavior.getBehaviorName() + " strategy");
     }
 
+
     protected void startNewGame() {
         if (!behavior.shouldStartNewGame(funds, games.size())) return;
 
@@ -93,13 +97,27 @@ public class RivalCompany extends Company{
     }
 
     public void developGames() {
+        // Check financial health before development
+        if (funds < CRITICAL_FUNDS_THRESHOLD) {
+            implementEmergencyMeasures();
+            return;
+        }
+
         Iterator<Game> iterator = games.iterator();
         while (iterator.hasNext()) {
             Game game = iterator.next();
             if (!game.isCompleted()) {
-                double costs = GameEconomy.calculateDevelopmentCosts(game, employees);
-                adjustFunds(-costs);
-                game.develop(employees);
+                double projectedCosts = GameEconomy.calculateDevelopmentCosts(game, employees);
+
+                // Only continue development if we can afford it
+                if (funds - projectedCosts > MIN_OPERATING_FUNDS) {
+                    adjustFunds(-projectedCosts);
+                    game.develop(employees);
+                } else {
+                    // Pause development if funds are too low
+                    System.out.println(getName() + " pausing development to preserve funds.");
+                    break;
+                }
             } else {
                 double earnings = game.calculateEarnings();
                 adjustFunds(earnings);
@@ -107,9 +125,39 @@ public class RivalCompany extends Company{
             }
         }
 
-        if (behavior.shouldStartNewGame(funds, games.size())) {
+        // Only start new game if financially healthy
+        if (behavior.shouldStartNewGame(funds, games.size()) && funds > CRITICAL_FUNDS_THRESHOLD * 2) {
             startNewGame();
         }
+    }
+
+    private void implementEmergencyMeasures() {
+        if (funds < EMERGENCY_FUNDS_THRESHOLD) {
+            // Emergency fund injection from parent company/investors
+            double bailoutAmount = 100000 + random.nextDouble() * 100000;
+            adjustFunds(bailoutAmount);
+            System.out.println(getName() + " received emergency funding: $" + String.format("%.2f", bailoutAmount));
+
+            // Reduce workforce if necessary
+            if (!employees.isEmpty() && employees.size() > 2) {
+                int layoffs = employees.size() / 4; // Reduced from 1/3
+                for (int i = 0; i < layoffs; i++) {
+                    if (!employees.isEmpty()) {
+                        Employee removed = employees.remove(employees.size() - 1);
+                    }
+                }
+            }
+        }
+
+        // Cancel any games that are too expensive to complete
+        games.removeIf(game -> {
+            double projectedCost = GameEconomy.calculateDevelopmentCosts(game, employees);
+            if (projectedCost > funds / 2) {
+                System.out.println(getName() + " cancelled " + game.getTitle() + " to preserve funds.");
+                return true;
+            }
+            return false;
+        });
     }
 
     public void hireEmployees(List<Employee> availableEmployees) {

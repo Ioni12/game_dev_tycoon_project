@@ -3,7 +3,7 @@ import java.util.Random;
 public class ConservativeBehavior implements CompanyBehavior {
     @Override
     public double calculateGameBudget(double funds, double marketShare) {
-        return funds * 0.2 * (1.0 + (marketShare / 100));
+        return funds * 0.03 * (1.0 + (marketShare / 200)); // Reduced from 8%
     }
 
     @Override
@@ -20,17 +20,17 @@ public class ConservativeBehavior implements CompanyBehavior {
 
     @Override
     public boolean shouldStartNewGame(double funds, int currentGames) {
-        return funds >= 2000 && currentGames < 2 && new Random().nextDouble() < 0.2;
+        return funds >= 20000 && currentGames < 2 && new Random().nextDouble() < 0.15;
     }
 
     @Override
     public int getTargetEmployeeCount() {
-        return (int) (new Random().nextInt(4) + 1);
+        return (int) (new Random().nextInt(1) + 1);
     }
 
     @Override
     public double getMaxSalaryPercentage() {
-        return (double) (new Random().nextDouble(0.15) + 0.05);
+        return (double) (new Random().nextDouble(0.12) + 0.05); // Lower salary risk
     }
 
     @Override

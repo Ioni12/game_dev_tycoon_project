@@ -3,7 +3,7 @@ import java.util.Random;
 public class BalancedBehavior implements CompanyBehavior {
     @Override
     public double calculateGameBudget(double funds, double marketShare) {
-        return funds * 0.2 * (1.0 + (marketShare / 100));
+        return funds * 0.04 * (1.0 + (marketShare / 100)); // Reduced from 15%
     }
 
     @Override
@@ -19,7 +19,7 @@ public class BalancedBehavior implements CompanyBehavior {
 
     @Override
     public int getTargetEmployeeCount() {
-        return (int) (new Random().nextInt(6) + 1);
+        return (int) (new Random().nextInt(2) + 1);
     }
 
     @Override

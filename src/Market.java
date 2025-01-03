@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Market {
     private List<Employee> availableEmployees;
@@ -14,6 +15,9 @@ public class Market {
     private int companyCount = 15;
     private NameGenerator nameGenerator;
     private double totalMarketSize = GameEconomy.BASE_MARKET_SIZE;
+    private static final double MIN_VIABLE_MARKET_SHARE = 1.0;
+    private static final double MAX_SHARE_CHANGE_PER_QUARTER = 2.0;
+    private static final int MIN_COMPANIES = 5;
 
 
     public Market(NameGenerator nameGenerator) {
@@ -26,23 +30,6 @@ public class Market {
         menu();
     }
 
-//    private void initializeMarket() {
-//        marketThread = new Thread(() -> {
-//           while(isRunning) {
-//                try {
-//                    updateMarketCycle();
-//                    Thread.sleep(marketCycle);
-//                } catch (InterruptedException e) {
-//                    Thread.currentThread().interrupt();
-//
-//                    break;
-//                }
-//           }
-//        });
-//        marketThread.setName("Market-cycle");
-//        marketThread.setDaemon(true);
-//        marketThread.start();
-//    }
 
     private void updateMarketCycle() {
         System.out.println("the market is running");
@@ -80,82 +67,72 @@ public class Market {
     }
 
     private void redistributeMarketShare(double availableShare) {
-        // Calculate total current shares of remaining companies (excluding player)
-        double totalCurrentShares = companies.stream()
+        List<Company> eligibleCompanies = companies.stream()
                 .filter(c -> !(c instanceof PlayerCompany))
-                .mapToDouble(Company::getShares)
-                .sum();
+                .filter(c -> c.getShares() >= MIN_VIABLE_MARKET_SHARE)
+                .collect(Collectors.toList());
 
-        if (totalCurrentShares > 0) {
-            // Distribute proportionally based on current market share
-            for (Company company : companies) {
-                if (!(company instanceof PlayerCompany)) {
-                    double proportion = company.getShares() / totalCurrentShares;
-                    double newShare = company.getShares() + (availableShare * proportion);
-                    company.setShares(newShare);
-                }
-            }
-        }
-        System.out.println("Market share of " + String.format("%.2f", availableShare) + "% has been redistributed");
+        double sharePerCompany = availableShare / eligibleCompanies.size();
+        eligibleCompanies.forEach(c -> c.adjustMarketShare(sharePerCompany));
     }
 
     private void updateMarketShares() {
-        Map<Company, Double> performanceScores = new HashMap<>();
-        double totalPerformance = 0.001; // Prevent division by zero
+        double totalShares = companies.stream()
+                .mapToDouble(Company::getShares)
+                .sum();
 
-        for (Company company : companies) {
-            // Base score so companies always have some performance
-            double baseScore = 1.0;
-
-            double gameQualityScore = company.games.stream()
-                    .mapToDouble(Game::getQuality)
-                    .average()
-                    .orElse(0.0);
-
-            double revenueScore = company.getFunds() / 10000.0;
-
-            double employeeScore = company.employees.stream()
-                    .mapToInt(Employee::getSkillLevel)
-                    .average()
-                    .orElse(0.0);
-
-            // Add baseScore to ensure some minimal performance
-            double performanceScore = baseScore +
-                    (gameQualityScore * 0.4) +
-                    (revenueScore * 0.4) +
-                    (employeeScore * 0.2);
-
-            // Add more randomness to create market dynamics
-            performanceScore *= (0.5 + random.nextDouble());
-
-            performanceScores.put(company, performanceScore);
-            totalPerformance += performanceScore;
+        // Normalize shares if total isn't 100%
+        if (Math.abs(totalShares - 100.0) > 0.01) {
+            double multiplier = 100.0 / totalShares;
+            companies.forEach(c -> c.setShares(c.getShares() * multiplier));
         }
 
-        // Redistribute market shares
-        double remainingShare = TOTAL_MARKET_SHARE -
-                (player != null ? player.getShares() : 0);
+        // Calculate performance-based share changes
+        double avgPerformance = companies.stream()
+                .mapToDouble(this::calculateCompanyPerformance)
+                .average()
+                .orElse(0.0);
+
+        Map<Company, Double> shareChanges = new HashMap<>();
+        double totalShareChange = 0;
 
         for (Company company : companies) {
-            if (company != player) {
-                double newShare = (performanceScores.get(company) / totalPerformance) *
-                        remainingShare;
-                // Add maximum change limit to prevent drastic swings
-                double currentShare = company.getShares();
-                double maxChange = 2.0; // Maximum 2% change per cycle
-                newShare = Math.max(currentShare - maxChange,
-                        Math.min(currentShare + maxChange, newShare));
-                company.setShares(newShare);
-            }
+            double performance = calculateCompanyPerformance(company);
+            double relativePerformance = performance / avgPerformance - 1.0;
+            double shareChange = Math.max(-MAX_SHARE_CHANGE_PER_QUARTER,
+                    Math.min(MAX_SHARE_CHANGE_PER_QUARTER, relativePerformance * 2.0));
+
+            shareChanges.put(company, shareChange);
+            totalShareChange += shareChange;
         }
+
+        // Apply changes while maintaining total of 100%
+        for (Company company : companies) {
+            double newShare = company.getShares() + shareChanges.get(company);
+            newShare = Math.max(MIN_VIABLE_MARKET_SHARE, newShare);
+            company.setShares(newShare);
+        }
+
+        // Final normalization
+        totalShares = companies.stream().mapToDouble(Company::getShares).sum();
+        double finalMultiplier = 100.0 / totalShares;
+        companies.forEach(c -> c.setShares(c.getShares() * finalMultiplier));
     }
 
     private void updateCompanyFinances() {
-        System.out.println("updating the company finances");
         companies.forEach(company -> {
-            if(company instanceof RivalCompany) {
-                double revenue = company.getShares() * 100;
-                company.adjustFunds(revenue);
+            if (company instanceof RivalCompany) {
+                // Guaranteed base revenue plus market share bonus
+                double baseRevenue = GameEconomy.calculateBaseQuarterlyRevenue(company.getShares());
+                company.adjustFunds(baseRevenue);
+
+                // Additional revenue from active games
+                company.games.stream()
+                        .filter(Game::isCompleted)
+                        .forEach(game -> {
+                            double gameRevenue = game.calculateEarnings();
+                            company.adjustFunds(gameRevenue);
+                        });
             }
         });
     }
@@ -250,27 +227,11 @@ public class Market {
     }
 
     private double calculateCompanyPerformance(Company company) {
-        double revenue = company.getQuarterlyRevenue();
-        double gameQuality = company.games.stream()
-                .mapToDouble(Game::getQuality)
-                .average()
-                .orElse(0.0);
-
-        double employeeSkill = company.employees.stream()
-                .mapToDouble(Employee::getSkillLevel)
-                .average()
-                .orElse(0.0);
-
-        int activeGames = (int) company.games.stream()
-                .filter(g -> !g.isCompleted())
-                .count();
-
-        return (revenue * 0.4) +
-                (gameQuality * 100 * 0.3) +
-                (employeeSkill * 50 * 0.2) +
-                (activeGames * 1000 * 0.1);
+        return (company.getQuarterlyRevenue() * 0.4) +
+                (company.games.stream().mapToDouble(Game::getQuality).average().orElse(0.0) * 200) +
+                (company.employees.stream().mapToDouble(Employee::getSkillLevel).average().orElse(0.0) * 100) +
+                (company.games.size() * 2000);
     }
-
 
     public double getTotalMarketSize() {
         return totalMarketSize;

@@ -7,16 +7,16 @@ public class Game {
     private int developmentProgress;
     private int quality;
     private boolean completed;
-    private static final int PROGRESS_MULTIPLIER = 100;
+    private static final int PROGRESS_MULTIPLIER = 50;
     private Company company; // Add this field
     private Market market;
 
     public enum Genre {
-        ACTION(12, 1.2),
-        CASUAL(6, 0.8),
-        RPG(18, 1.5),
-        STRATEGY(10, 1.0),
-        SIMULATION(8, 0.9);
+        ACTION(6, 1.15),     // Reduced from 12 months
+        CASUAL(3, 0.85),     // Reduced from 6 months
+        RPG(9, 1.35),        // Reduced from 18 months
+        STRATEGY(5, 1.05),   // Reduced from 10 months
+        SIMULATION(4, 0.95);
 
         private final int monthsToComplete;
         private final double qualityMultiplier;
@@ -46,32 +46,24 @@ public class Game {
         this.completed = false;
     }
 
-
-
     public void develop(List<Employee> developers) {
         if (!completed) {
-            // Calculate progress from developers
+            // Double development speed
             int progress = developers.stream()
                     .mapToInt(Employee::getSkillLevel)
-                    .sum();
+                    .sum() * 2;  // Added multiplier
 
             developmentProgress += progress;
 
-            // Calculate and display progress percentage
             int totalRequired = genre.getMonthsToComplete() * PROGRESS_MULTIPLIER;
             double progressPercentage = (developmentProgress * 100.0) / totalRequired;
 
-            // Format to 2 decimal places
             System.out.printf("%s - Development Progress: %.2f%%\n", title, progressPercentage);
 
-            // Check if game is completed
             if (developmentProgress >= totalRequired) {
                 completed = true;
                 calculateQuality(developers);
                 System.out.println("\n" + title + " Completed!");
-
-                double earnings = calculateEarnings();
-                System.out.printf("%s earned $%.2f from sales!\n", title, earnings);
             }
         }
     }
@@ -85,7 +77,7 @@ public class Game {
     }
 
     public double calculateEarnings() {
-        return GameEconomy.calculateGameRevenue(this, company.getShares(), market.getTotalMarketSize());
+        return GameEconomy.calculateGameRevenue(this, company.getShares(), market.getTotalMarketSize()) * 2;
     }
 
     public boolean isCompleted() { return completed; }
